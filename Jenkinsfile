@@ -52,7 +52,7 @@ pipeline {
               sh 'sleep 8'
             } else {
               bat 'docker compose -f docker-compose.test.yml up -d --build'
-              bat 'timeout /T 8 /NOBREAK'
+              bat 'ping -n 8 127.0.0.1 >nul'
             }
           }
         }
