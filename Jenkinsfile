@@ -62,16 +62,23 @@ pipeline {
     stage('Integration Test') {
         steps {
             script {
-                // Wait longer before testing
-                bat 'ping -n 20 127.0.0.1 >nul'
-    
-                // Retry loop until app responds (max ~60s)
+                // Retry loop until app responds (max ~90s)
                 bat '''
+                setlocal enabledelayedexpansion
                 for /l %%x in (1, 1, 30) do (
-                    powershell -Command "try { Invoke-WebRequest http://localhost:3000/ -UseBasicParsing -TimeoutSec 3; exit 0 } catch { Start-Sleep -Seconds 2 }"
+                    powershell -Command "try { Invoke-WebRequest http://localhost:3000/ -UseBasicParsing -TimeoutSec 5; exit 0 } catch { Start-Sleep -Seconds 3 }"
+                    if !errorlevel! EQU 0 exit /b 0
                 )
-                exit 1
+                echo "App did not respond after 90s"
+                exit /b 1
                 '''
+            }
+        }
+        post {
+            always {
+                dir("${APP_DIR}") {
+                    bat 'docker compose -f docker-compose.test.yml down'
+                }
             }
         }
     }
