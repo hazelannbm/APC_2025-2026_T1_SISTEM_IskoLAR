@@ -2,7 +2,7 @@ pipeline {
   agent any
   environment {
     APP_DIR = 'iskolar'
-    IMAGE_REPO = 'yourdockerhub/iskolar'    // << replace with your Docker Hub repo (username/iskolar)
+    IMAGE_REPO = 'hbmones/iskolar'    // << replace with your Docker Hub repo (username/iskolar)
   }
   stages {
     stage('Checkout') {
@@ -60,16 +60,20 @@ pipeline {
     }
 
     stage('Integration Test') {
-      steps {
-        script {
-          if (isUnix()) {
-            // simple HTTP check - change path if you have /health or different port
-            sh 'curl -f http://localhost:3000/ || (echo "integration check failed" && exit 1)'
-          } else {
-            bat 'powershell -Command "Invoke-WebRequest -UseBasicParsing -Uri http://localhost:3000/ -TimeoutSec 10"'
-          }
+        steps {
+            script {
+                // Wait longer before testing
+                bat 'ping -n 20 127.0.0.1 >nul'
+    
+                // Retry loop until app responds (max ~60s)
+                bat '''
+                for /l %%x in (1, 1, 30) do (
+                    powershell -Command "try { Invoke-WebRequest http://localhost:3000/ -UseBasicParsing -TimeoutSec 3; exit 0 } catch { Start-Sleep -Seconds 2 }"
+                )
+                exit 1
+                '''
+            }
         }
-      }
     }
 
     stage('Create Docker Image & Push') {
@@ -86,13 +90,13 @@ pipeline {
             withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
               if (isUnix()) {
                 sh """
-                  docker build -t ${IMAGE_REPO}:${tag} .
+                  docker build -t ${IMAGE_REPO}:${tag} iskolar
                   echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
                   docker push ${IMAGE_REPO}:${tag}
                 """
               } else {
                 bat """
-                  docker build -t ${IMAGE_REPO}:${tag} .
+                  docker build -t ${IMAGE_REPO}:${tag} iskolar
                   echo %DOCKERHUB_PASS% | docker login -u %DOCKERHUB_USER% --password-stdin
                   docker push ${IMAGE_REPO}:${tag}
                 """
