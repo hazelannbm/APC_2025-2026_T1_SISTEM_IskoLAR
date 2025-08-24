@@ -33,7 +33,7 @@ pipeline {
             if (isUnix()) {
               sh 'if [ -f package.json ] && npm run | grep -q "test" ; then npm test ; else echo "no tests"; fi'
             } else {
-              bat 'powershell -Command "if((Get-Content package.json) -match \\"test\\") { npm test } else { Write-Host \\"no tests\\" }"'
+              bat 'if exist package.json ( npm test ) else ( echo no tests )'
             }
           }
         }
