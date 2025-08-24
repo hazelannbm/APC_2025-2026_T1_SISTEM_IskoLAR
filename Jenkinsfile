@@ -73,11 +73,24 @@ pipeline {
             '''
           } else {
             bat '''
-              for /l %%x in (1, 1, 30) do (
+              @echo off
+              setlocal enabledelayedexpansion
+              set success=false
+              for /l %%x in (1,1,30) do (
                 powershell -Command "try { Invoke-WebRequest http://localhost:3000/ -UseBasicParsing -TimeoutSec 5; exit 0 } catch { Start-Sleep -Seconds 3 }"
+                if !errorlevel! == 0 (
+                  set success=true
+                  goto :break
+                )
               )
-              echo "App did not respond after 90s"
-              exit /b 1
+              :break
+              if "!success!"=="true" (
+                echo App is running
+                exit /b 0
+              ) else (
+                echo App did not respond after 90s
+                exit /b 1
+              )
             '''
           }
         }
