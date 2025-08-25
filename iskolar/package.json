@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
-    "test": "jest"
+    "test": "jest --config jest.config.mjs"
   },
   "dependencies": {
     "next": "15.5.0",
