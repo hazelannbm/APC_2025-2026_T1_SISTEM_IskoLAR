@@ -97,8 +97,16 @@ pipeline {
       }
     }
   }
+
   post {
     always {
+      script {
+        if (isUnix()) {
+          sh "pkill -f 'next dev' || true"
+        } else {
+          bat 'taskkill /F /IM node.exe || exit 0'
+        }
+      }
       cleanWs()
     }
   }
